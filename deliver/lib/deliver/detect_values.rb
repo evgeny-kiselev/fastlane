@@ -49,11 +49,13 @@ module Deliver
     def find_folders(options)
       containing = Helper.fastlane_enabled? ? FastlaneCore::FastlaneFolder.path : '.'
       options[:screenshots_path] ||= File.join(containing, 'screenshots')
+	  options[:trailers_path] ||= File.join(containing, 'trailers')
       options[:metadata_path] ||= File.join(containing, 'metadata')
     end
 
     def ensure_folders_created(options)
       FileUtils.mkdir_p(options[:screenshots_path])
+	  FileUtils.mkdir_p(options[:trailers_path])
       FileUtils.mkdir_p(options[:metadata_path])
     end
 

@@ -49,23 +49,37 @@ module Deliver
       screenshots_per_language.each do |language, screenshots_for_language|
         UI.message("Uploading #{screenshots_for_language.length} screenshots for language #{language}")
         screenshots_for_language.each do |screenshot|
-          indized[screenshot.language] ||= {}
-          indized[screenshot.language][screenshot.formatted_name] ||= 0
-          indized[screenshot.language][screenshot.formatted_name] += 1 # we actually start with 1... wtf iTC
+			indized[screenshot.language] ||= {}
+			indized[screenshot.language][screenshot.formatted_name] ||= 0
+			indized[screenshot.language][screenshot.formatted_name] += 1 # we actually start with 1... wtf iTC
 
-          index = indized[screenshot.language][screenshot.formatted_name]
+			index = indized[screenshot.language][screenshot.formatted_name]
 
-          if index > 10
-            UI.error("Too many screenshots found for device '#{screenshot.formatted_name}' in '#{screenshot.language}', skipping this one (#{screenshot.path})")
-            next
-          end
+			if index > 10
+				UI.error("Too many screenshots found for device '#{screenshot.formatted_name}' in '#{screenshot.language}', skipping this one (#{screenshot.path})")
+				next
+			end
 
-          UI.message("Uploading '#{screenshot.path}'...")
-          v.upload_screenshot!(screenshot.path,
-                               index,
-                               screenshot.language,
-                               screenshot.device_type,
-                               screenshot.is_messages?)
+			UI.message("Uploading '#{screenshot.path}'...")
+			tryCount = 3
+			begin
+			tryCount--
+				v.upload_screenshot!(
+						screenshot.path,
+						index,
+						screenshot.language,
+						screenshot.device_type,
+						screenshot.is_messages?
+					)
+			rescue Faraday::Error::ConnectionFailed
+				if(tryCount < 0) 
+					UI.message("Try counts ended")
+				else	
+					UI.message("Failed upload screenshot, becouse connection was closed by host. Try relogin ")
+					Deliver::Runner.new(options)
+					retry
+				end
+			end
         end
         # ideally we should only save once, but itunes server can't cope it seems
         # so we save per language. See issue #349

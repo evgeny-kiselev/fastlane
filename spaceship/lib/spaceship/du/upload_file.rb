@@ -20,13 +20,18 @@ module Spaceship
         path = remove_alpha_channel(path) if File.extname(path).casecmp('.png').zero?
 
         content_type = Utilities.content_type(path)
-        self.new(
-          file_path: path,
-          file_name: 'ftl_' + content_md5 + '_' + File.basename(path),
-          file_size: File.size(path),
-          content_type: content_type,
-          bytes: File.read(path)
-        )
+		begin
+			binary_file = File.open(path, "rb")
+			self.new(
+			  file_path: path,
+			  file_name: 'ftl_' + content_md5 + '_' + File.basename(path),
+			  file_size: File.size(path),
+			  content_type: content_type,
+			  bytes: binary_file.read
+			)
+		ensure
+			binary_file.close
+		end
       end
 
       # As things like screenshots and app icon shouldn't contain the alpha channel

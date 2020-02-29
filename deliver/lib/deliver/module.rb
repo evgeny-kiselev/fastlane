@@ -1,5 +1,6 @@
 require 'fastlane_core/helper'
 require 'fastlane_core/ui/ui'
+require_relative 'screen_size'
 
 module Deliver
   class << self

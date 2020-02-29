@@ -4,6 +4,7 @@ require 'spaceship/tunes/tunes'
 require_relative 'module'
 require_relative 'download_screenshots'
 require_relative 'upload_metadata'
+require_relative 'download_trailers'
 
 module Deliver
   class Setup
@@ -33,12 +34,21 @@ module Deliver
         FileUtils.mkdir_p(screenshots_path) # just in case the fetching didn't work
         File.write(File.join(screenshots_path, 'README.txt'), File.read("#{Deliver::ROOT}/lib/assets/ScreenshotsHelp"))
       end
+	  
+	  trailers_path = options[:trailers_path] || File.join(deliver_path, 'trailers')
+	  unless options[:skip_trailers]
+		  download_trailers(trailers_path, options)
+		  
+		  # Add a README to the trailers folder
+		  FileUtils.mkdir_p(trailers_path)
+		  File.write(File.join(trailers_path, 'README.txt'), File.read("#{Deliver::ROOT}/lib/assets/ScreenshotsHelp"))
+	  end
 
       UI.success("Successfully created new Deliverfile at path '#{file_path}'")
     end
 
     # This method takes care of creating a new 'deliver' folder, containing the app metadata
-    # and screenshots folders
+    # and screenshots folders and trailers folders
     def generate_deliver_file(deliver_path, options)
       v = options[:app].latest_version
       metadata_path = options[:metadata_path] || File.join(deliver_path, 'metadata')
@@ -67,7 +77,7 @@ module Deliver
           else
             content = app_details.send(key)[language].to_s
           end
-          content << "\n"
+          content += "\n"
           resulting_path = File.join(path, language, "#{key}.txt")
           FileUtils.mkdir_p(File.expand_path('..', resulting_path))
           File.write(resulting_path, content)
@@ -82,7 +92,7 @@ module Deliver
         else
           content = app_details.send(key).to_s
         end
-        content << "\n"
+        content += "\n"
         resulting_path = File.join(path, "#{key}.txt")
         File.write(resulting_path, content)
         UI.message("Writing to '#{resulting_path}'")
@@ -91,7 +101,7 @@ module Deliver
       # Trade Representative Contact Information
       UploadMetadata::TRADE_REPRESENTATIVE_CONTACT_INFORMATION_VALUES.each do |key, option_name|
         content = v.send(key).to_s
-        content << "\n"
+        content += "\n"
         base_dir = File.join(path, UploadMetadata::TRADE_REPRESENTATIVE_CONTACT_INFORMATION_DIR)
         FileUtils.mkdir_p(base_dir)
         resulting_path = File.join(base_dir, "#{option_name}.txt")
@@ -102,7 +112,7 @@ module Deliver
       # Review information
       UploadMetadata::REVIEW_INFORMATION_VALUES.each do |key, option_name|
         content = v.send(key).to_s
-        content << "\n"
+        content += "\n"
         base_dir = File.join(path, UploadMetadata::REVIEW_INFORMATION_DIR)
         FileUtils.mkdir_p(base_dir)
         resulting_path = File.join(base_dir, "#{option_name}.txt")
@@ -131,5 +141,10 @@ module Deliver
       FileUtils.mkdir_p(path)
       Deliver::DownloadScreenshots.run(options, path)
     end
+	
+	def download_trailers(path, options)
+		FileUtils.mkdir_p(path)
+		Deliver::DownloadTrailers.run(options, path)
+	end
   end
 end

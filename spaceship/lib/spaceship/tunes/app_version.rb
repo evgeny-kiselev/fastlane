@@ -580,7 +580,7 @@ module Spaceship
         existing_sort_orders = device_lang_trailers.map { |s| s["value"]["sortPosition"] }
 
         if trailer_path # adding / replacing trailer
-          raise "Invalid timestamp #{timestamp}" if (timestamp =~ /^[0-9][0-9].[0-9][0-9]$/).nil?
+          raise "Invalid timestamp #{timestamp}" if (timestamp =~ /^[0-9][0-9]:[0-9][0-9]$/).nil?
 
           if preview_image_path
             check_preview_screenshot_resolution(preview_image_path, device)

@@ -64,8 +64,11 @@ module Spaceship
       require 'tempfile'
       tmp = Tempfile.new(['video_preview', ".jpg"])
       file = tmp.path
-      command = "ffmpeg -y -i \"#{video_path}\" -s #{width}x#{height} -ss \"#{timestamp}\" -vframes 1 \"#{file}\" 2>&1 >/dev/null"
-      # puts "COMMAND: #{command}"
+	  if(Utilities.windows?)
+			command = "ffmpeg -y -ss \"#{timestamp}\" -i \"#{video_path}\" -s #{width}x#{height} -vframes 1 \"#{file}\" 2>&1 > $null" #for win 10
+			else command = "ffmpeg -y -i \"#{video_path}\" -s #{width}x#{height} -ss \"#{timestamp}\" -vframes 1 \"#{file}\" 2>&1 >/dev/null"
+	  end
+       #puts "COMMAND: #{command}"
       `#{command}`
       raise "Failed to grab screenshot at #{timestamp} from #{video_path} (using #{command})" unless $CHILD_STATUS.to_i == 0
       tmp
@@ -93,7 +96,27 @@ module Spaceship
     def md5digest(file_path)
       Digest::MD5.hexdigest(File.read(file_path))
     end
+	
+	def windows?
+		(/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+	end
 
-    module_function :content_type, :grab_video_preview, :portrait?, :resolution, :video_resolution, :md5digest
+	def mac?
+		(/darwin/ =~ RUBY_PLATFORM) != nil
+	end
+
+	def unix?
+		!OS.windows?
+	end
+
+	def linux?
+		OS.unix? and not OS.mac?
+	end
+
+	def jruby?
+		RUBY_ENGINE == 'jruby'
+	end
+
+    module_function :content_type, :grab_video_preview, :portrait?, :resolution, :video_resolution, :md5digest, :windows?, :mac?, :unix?, :linux?, :jruby?
   end
 end
