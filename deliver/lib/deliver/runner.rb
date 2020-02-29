@@ -24,6 +24,7 @@ module Deliver
       login
 
       Deliver::DetectValues.new.run!(self.options, skip_auto_detection)
+      options[:thread_count] = 1 if options[:thread_count] < 1
       FastlaneCore::PrintTable.print_values(config: options, hide_keys: [:app], mask_keys: ['app_review_information.demo_password'], title: "deliver #{Fastlane::VERSION} Summary")
     end
 

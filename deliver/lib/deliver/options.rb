@@ -27,6 +27,10 @@ module Deliver
                                      code_gen_sensitive: true,
                                      default_value: CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier),
                                      default_value_dynamic: true),
+        FastlaneCore::ConfigItem.new(key: :thread_count,
+                                     env_name: "DELIVER_THREAD_COUNT",
+                                     description: "Threads count for upload/download screenshots",
+                                     default_value: 1),
         # version
         FastlaneCore::ConfigItem.new(key: :app_version,
                                      short_option: '-z',
