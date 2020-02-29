@@ -30,7 +30,8 @@ module Deliver
         FastlaneCore::ConfigItem.new(key: :thread_count,
                                      env_name: "DELIVER_THREAD_COUNT",
                                      description: "Threads count for upload/download screenshots",
-                                     default_value: 1),
+                                     default_value: 6,
+                                     is_string: false),
         # version
         FastlaneCore::ConfigItem.new(key: :app_version,
                                      short_option: '-z',
