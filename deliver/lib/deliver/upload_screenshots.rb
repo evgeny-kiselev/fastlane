@@ -13,6 +13,7 @@ module Deliver
       return if options[:edit_live]
 
       app = options[:app]
+      threadPool = Thread.pool(options[:thread_count])
 
       v = app.edit_version(platform: options[:platform])
       UI.user_error!("Could not find a version to edit for app '#{app.name}'") unless v
@@ -27,10 +28,15 @@ module Deliver
           # We have to nil check for languages not activated
           next if v.screenshots[language].nil?
           v.screenshots[language].each_with_index do |t, index|
+            threadPool.process {
             v.upload_screenshot!(nil, t.sort_order, t.language, t.device_type, t.is_imessage)
+            }
+            threadPool.wait
           end
         end
       end
+
+      threadPool.wait(:done)
 
       # Now, fill in the new ones
       indized = {} # per language and device type
@@ -47,10 +53,8 @@ module Deliver
         Helper.hide_loading_indicator
       end
 
-      threadPool = Thread.pool(options[:thread_count])
-
       screenshots_per_language.each do |language, screenshots_for_language|
-        UI.message("Uploading #{screenshots_for_language.length} screenshots for language #{language}")
+        UI.message("\n\nUploading #{screenshots_for_language.length} screenshots for language #{language}")
         screenshots_for_language.each do |screenshot|
           indized[screenshot.language] ||= {}
           indized[screenshot.language][screenshot.formatted_name] ||= 0
@@ -63,13 +67,7 @@ module Deliver
             next
           end
 
-          #  UI.message("Uploading '#{screenshot.path}'...")
-          #         tryCount = 3
-          #          begin
-          #           tryCount -= 1
-
           threadPool.process {
-            UI.message("Uploading '#{screenshot.path}'...")
             v.upload_screenshot!(
                 screenshot.path,
                 index,
@@ -78,26 +76,16 @@ module Deliver
                 screenshot.is_messages?
             )
           }
-
-          #rescue Faraday::Error::ConnectionFailed
-          #if (tryCount < 0)
-          #UI.message("Try counts ended")
-          #else
-          #UI.message("Failed upload screenshot, becouse connection was closed by host. Try relogin ")
-          #Deliver::Runner.new(options)
-          #retry
-          #end
-          #    end
+          UI.message("Uploading '#{screenshot.path}'...")
+          threadPool.wait
         end
-        # ideally we should only save once, but itunes server can't cope it seems
-        # so we save per language. See issue #349
-        threadPool.wait
-        Helper.show_loading_indicator("Saving changes")
-        v.save!
-        # Refresh app version to start clean again. See issue #9859
-        v = app.edit_version
-        Helper.hide_loading_indicator
       end
+      threadPool.wait(:done)
+      Helper.show_loading_indicator("Saving changes")
+      v.save!
+      Helper.hide_loading_indicator
+      # Refresh app version to start clean again. See issue #9859
+      v = app.edit_version
       threadPool.shutdown
       UI.success("Successfully uploaded screenshots to App Store Connect")
     end
