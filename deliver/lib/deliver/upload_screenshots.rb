@@ -29,7 +29,7 @@ module Deliver
           next if v.screenshots[language].nil?
           v.screenshots[language].each_with_index do |t, index|
             threadPool.process {
-            v.upload_screenshot!(nil, t.sort_order, t.language, t.device_type, t.is_imessage)
+              v.upload_screenshot!(nil, t.sort_order, t.language, t.device_type, t.is_imessage)
             }
             threadPool.wait
           end
@@ -79,13 +79,15 @@ module Deliver
           UI.message("Uploading '#{screenshot.path}'...")
           threadPool.wait
         end
+        # ideally we should only save once, but itunes server can't cope it seems
+        # so we save per language. See issue #349
+        threadPool.wait(:done)
+        Helper.show_loading_indicator("Saving changes")
+        v.save!
+        # Refresh app version to start clean again. See issue #9859
+        v = app.edit_version
+        Helper.hide_loading_indicator
       end
-      threadPool.wait(:done)
-      Helper.show_loading_indicator("Saving changes")
-      v.save!
-      Helper.hide_loading_indicator
-      # Refresh app version to start clean again. See issue #9859
-      v = app.edit_version
       threadPool.shutdown
       UI.success("Successfully uploaded screenshots to App Store Connect")
     end
